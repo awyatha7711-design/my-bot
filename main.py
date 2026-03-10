@@ -5,7 +5,7 @@ import os
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Bot is running!")
 
-if name == '__main__':
+if__name__ == '__main__':
     TOKEN = os.environ.get('BOT_TOKEN')
     application = ApplicationBuilder().token(TOKEN).build()
     
