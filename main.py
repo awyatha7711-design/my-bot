@@ -6,7 +6,6 @@ async def start(update, context):
 
 if __name__ == '__main__':
     token = os.environ.get('BOT_TOKEN')
-    if token:
-        application = ApplicationBuilder().token(token).build()
-        application.add_handler(CommandHandler('start', start))
-        application.run_polling()
+    application = ApplicationBuilder().token(token).build()
+    application.add_handler(CommandHandler('start', start))
+    application.run_polling()
