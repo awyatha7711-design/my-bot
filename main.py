@@ -27,23 +27,19 @@ async def get_tiktok_video(update, context):
     
     try:
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            # API endpoint
             api_url = f"https://www.tikwm.com/api/?url={url}"
             response = await client.get(api_url, timeout=20.0)
             data = response.json()
             
-            # Simplified: Just check if 'data' exists, skip followers/subscribers
             if data.get("code") == 0:
                 video_url = data['data']['play']
                 author = data['data']['author']['nickname']
-                
                 await update.message.reply_video(video=video_url, caption=f"Author: {author}")
             else:
                 await update.message.reply_text("Failed to download video. Please try another link.")
             
             await msg.delete()
-    except Exception as e:
-        # Error တက်ရင် ဘာကြောင့်လဲဆိုတာကို သိရအောင် ရေးပေးထားပါတယ်
+    except Exception:
         await update.message.reply_text("An error occurred. Please try again.")
         await msg.delete()
 
