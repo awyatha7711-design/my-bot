@@ -13,7 +13,6 @@ def home():
 def run_web():
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
 
-# Your Token
 TOKEN = '8571756435:AAF-0RLqh2dNgQOgILdNwvpj5zo3SoimyUU'
 
 async def start(update, context):
@@ -26,42 +25,32 @@ async def get_tiktok_video(update, context):
     
     msg = await update.message.reply_text("Downloading your video, please wait a few seconds.")
     
+    # Using a different API structure that handles short links better
     try:
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            # Expand the short link first
-            resp = await client.get(url)
-            final_url = str(resp.url)
-            
-            # API request
-            api_url = "https://tikwm.com/api/"
-            response = await client.post(api_url, data={"url": final_url, "hd": 1}, timeout=20.0)
+            # Get the actual video URL from the service
+            api_url = f"https://api.tiklydown.eu.org/api/download?url={url}"
+            response = await client.get(api_url, timeout=20.0)
             data = response.json()
             
-            if data.get("code") == 0:
-                video_url = data['data']['play']
-                author = data['data']['author']['nickname']
-                subs = data['data']['author']['follower_count']
+            if data.get("status") == "success":
+                video_url = data['video']['noWatermark']
+                author = data['author']['name']
+                subs = data['author']['stats']['followerCount']
                 
                 await update.message.reply_video(video=video_url, caption=f"Author: {author}\nFollowers: {subs}")
             else:
-                await update.message.reply_text("Failed to download the video. Please try another link.")
+                await update.message.reply_text("Failed to download. Please try another link.")
             
             await msg.delete()
-    except Exception:
-        await update.message.reply_text("An error occurred. Please try again.")
+    except Exception as e:
+        await update.message.reply_text(f"An error occurred: {str(e)}")
         await msg.delete()
 
 if __name__ == '__main__':
-    # Start web server
     Thread(target=run_web).start()
-    
-    # Initialize bot
     application = ApplicationBuilder().token(TOKEN).build()
     application.bot.delete_webhook(drop_pending_updates=True)
-    
-    # Handlers
     application.add_handler(CommandHandler('start', start))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), get_tiktok_video))
-    
-    # Start polling
     application.run_polling(drop_pending_updates=True)
