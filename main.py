@@ -1,22 +1,22 @@
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
-import requests
 import os
+import httpx
 from flask import Flask
 from threading import Thread
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Bot is running!"
+    return "Bot is running"
 
 def run_web():
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
 
-TOKEN = '8644018753:AAGN99AOn0zkHd9dFo8OsirwOMpmR4SkDqY'
+TOKEN = '8571756435:AAF-0RLqh2dNgQOgILdNwvpj5zo3SoimyUU'
 
 async def start(update, context):
-    await update.message.reply_text("I am ready! Please paste the TikTok link.")
+    await update.message.reply_text("Hello! Send me a TikTok video link and I will download it for you.")
 
 async def get_tiktok_video(update, context):
     url = update.message.text
@@ -26,14 +26,22 @@ async def get_tiktok_video(update, context):
     msg = await update.message.reply_text("Downloading...")
     api_url = f"https://tikwm.com/api/?url={url}"
     
-    try:
-        response = requests.get(api_url).json()
-        video_url = response['data']['play']
-        await update.message.reply_video(video=video_url)
-        await msg.delete()
-    except Exception as e:
-        await update.message.reply_text("Failed to download.")
-        await msg.delete()
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(api_url, timeout=10.0)
+            data = response.json()
+            
+            video_url = data['data']['play']
+            subscribers = data['data']['author']['follower_count']
+            author_name = data['data']['author']['nickname']
+            
+            caption = f"Author: {author_name}\nFollowers: {subscribers}"
+            
+            await update.message.reply_video(video=video_url, caption=caption)
+            await msg.delete()
+        except Exception:
+            await update.message.reply_text("Error: Could not download the video.")
+            await msg.delete()
 
 if __name__ == '__main__':
     Thread(target=run_web).start()
