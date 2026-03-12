@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 import requests
 
-# Your Bot Token
+# Bot Token
 TOKEN = '8644018753:AAE_IH51-l0WjG99Bj357j-uo-tRrS7j8nA'
 
 # /start command
@@ -35,9 +35,11 @@ async def get_tiktok_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.delete()
 
 if __name__ == '__main__':
+    # Initialize application
     application = ApplicationBuilder().token(TOKEN).build()
     
     application.add_handler(CommandHandler('start', start))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), get_tiktok_video))
     
-    application.run_polling()
+    # Run polling
+    application.run_polling(drop_pending_updates=True)
