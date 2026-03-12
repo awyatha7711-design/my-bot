@@ -25,10 +25,8 @@ async def get_tiktok_video(update, context):
     
     msg = await update.message.reply_text("Downloading your video, please wait a few seconds.")
     
-    # Using a different API structure that handles short links better
     try:
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            # Get the actual video URL from the service
             api_url = f"https://api.tiklydown.eu.org/api/download?url={url}"
             response = await client.get(api_url, timeout=20.0)
             data = response.json()
@@ -37,20 +35,22 @@ async def get_tiktok_video(update, context):
                 video_url = data['video']['noWatermark']
                 author = data['author']['name']
                 subs = data['author']['stats']['followerCount']
-                
                 await update.message.reply_video(video=video_url, caption=f"Author: {author}\nFollowers: {subs}")
             else:
                 await update.message.reply_text("Failed to download. Please try another link.")
-            
             await msg.delete()
     except Exception as e:
-        await update.message.reply_text(f"An error occurred: {str(e)}")
+        await update.message.reply_text(f"Error: {str(e)}")
         await msg.delete()
 
 if __name__ == '__main__':
     Thread(target=run_web).start()
+    
+    # BUILD AND FORCE KICK OLD SESSIONS
     application = ApplicationBuilder().token(TOKEN).build()
-    application.bot.delete_webhook(drop_pending_updates=True)
+    application.bot.delete_webhook(drop_pending_updates=True) # This is key
+    
     application.add_handler(CommandHandler('start', start))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), get_tiktok_video))
+    
     application.run_polling(drop_pending_updates=True)
