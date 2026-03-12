@@ -25,40 +25,35 @@ async def get_tiktok_video(update, context):
     
     msg = await update.message.reply_text("Downloading your video, please wait a few seconds.")
     
-    # Use a custom header to look like a browser
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-    
     try:
-        async with httpx.AsyncClient(follow_redirects=True, headers=headers) as client:
-            # Using a public, more stable API endpoint
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            # API endpoint
             api_url = f"https://www.tikwm.com/api/?url={url}"
             response = await client.get(api_url, timeout=20.0)
-            
-            # Print response for debugging in your Render Logs
-            print(f"Response status: {response.status_code}")
-            print(f"Response text: {response.text[:200]}")
-            
             data = response.json()
             
+            # Simplified: Just check if 'data' exists, skip followers/subscribers
             if data.get("code") == 0:
                 video_url = data['data']['play']
                 author = data['data']['author']['nickname']
-                subs = data['data']['author']['follower_count']
-                await update.message.reply_video(video=video_url, caption=f"Author: {author}\nFollowers: {subs}")
+                
+                await update.message.reply_video(video=video_url, caption=f"Author: {author}")
             else:
-                await update.message.reply_text("Failed to process the link. The API returned an error.")
+                await update.message.reply_text("Failed to download video. Please try another link.")
             
             await msg.delete()
     except Exception as e:
-        await update.message.reply_text(f"Error: {str(e)}")
+        # Error တက်ရင် ဘာကြောင့်လဲဆိုတာကို သိရအောင် ရေးပေးထားပါတယ်
+        await update.message.reply_text("An error occurred. Please try again.")
         await msg.delete()
 
 if __name__ == '__main__':
     Thread(target=run_web).start()
+    
     application = ApplicationBuilder().token(TOKEN).build()
     application.bot.delete_webhook(drop_pending_updates=True)
+    
     application.add_handler(CommandHandler('start', start))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), get_tiktok_video))
+    
     application.run_polling(drop_pending_updates=True)
